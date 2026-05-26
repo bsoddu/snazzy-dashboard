@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snazzy Agency — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f5f5f3;color:#1a1a1a;font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+header{background:#fff;border-bottom:1px solid #e5e5e5;padding:0 2rem;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.logo{font-size:13px;font-weight:600}.logo span{color:#aaa;font-weight:400}
+nav{display:flex;gap:4px}
+.nav-btn{background:none;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;color:#999;font-family:'Inter',sans-serif;transition:all .15s}
+.nav-btn:hover{background:#f5f5f3;color:#1a1a1a}
+.nav-btn.active{background:#1a1a1a;color:#fff}
+.btn-new{background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s;display:flex;align-items:center;gap:6px}
+.btn-new:hover{opacity:.8}
+main{max-width:1400px;margin:0 auto;padding:1.5rem 2rem}
+.page{display:none}.page.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.5rem}
+.kpi{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:.875rem 1.125rem}
+.kpi-label{font-size:11px;color:#999;margin-bottom:5px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.kpi-val{font-size:20px;font-weight:600}.kpi-val.green{color:#16a34a}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+.toolbar select,.toolbar input[type=text]{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:7px 11px;color:#1a1a1a;font-size:13px;font-family:'Inter',sans-serif;outline:none}
+.count{margin-left:auto;font-size:12px;color:#aaa}
+.table-wrap{background:#fff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:800px}
+th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#aaa;padding:11px 14px;text-align:left;border-bottom:1px solid #f0f0f0;background:#fafafa;white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.nome-cell{font-weight:500}.muted{color:#aaa;font-size:13px}
+.badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+.b-da{background:#f3f4f6;color:#6b7280}.b-in{background:#fef3c7;color:#92400e}
+.b-rev{background:#dbeafe;color:#1e40af}.b-cons{background:#dcfce7;color:#166534}
+.b-nonpag{background:#fee2e2;color:#991b1b}.b-acc{background:#fef3c7;color:#92400e}.b-pag{background:#dcfce7;color:#166534}
+.btn-edit{background:none;border:1px solid #e5e5e5;border-radius:6px;padding:4px 10px;color:#999;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;transition:all .15s}
+.btn-edit:hover{border-color:#1a1a1a;color:#1a1a1a}
+.stabs{display:flex;gap:4px;background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:4px;width:fit-content;margin-bottom:1.25rem}
+.stab{padding:7px 18px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:#999;font-family:'Inter',sans-serif;transition:all .15s}
+.stab.active{background:#1a1a1a;color:#fff}
+.apt-list{display:flex;flex-direction:column;gap:10px}
+.apt-card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:flex-start;gap:1rem;cursor:pointer;transition:border-color .15s}
+.apt-card:hover{border-color:#ccc}
+.apt-date{background:#f5f5f3;border-radius:8px;padding:.5rem .75rem;text-align:center;min-width:52px;flex-shrink:0}
+.apt-day{font-size:20px;font-weight:600;line-height:1}.apt-month{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+.apt-cliente{font-weight:500;font-size:14px;margin-bottom:3px}.apt-meta{font-size:12px;color:#aaa;display:flex;gap:12px;flex-wrap:wrap}.apt-note{font-size:12px;color:#999;margin-top:4px}
+.todo-list{display:flex;flex-direction:column;gap:8px}
+.todo-item{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:.875rem 1.125rem;display:flex;align-items:center;gap:12px}
+.todo-item.done{opacity:.5}
+.todo-check{width:20px;height:20px;border-radius:50%;border:2px solid #e5e5e5;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;background:none}
+.todo-check.checked{background:#1a1a1a;border-color:#1a1a1a;color:#fff}
+.todo-task{font-size:14px;font-weight:500}.todo-item.done .todo-task{text-decoration:line-through;color:#aaa}
+.todo-meta{font-size:12px;color:#aaa;margin-top:2px;display:flex;gap:10px;align-items:center}
+.prio{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.prio-alta{background:#fee2e2;color:#991b1b}.prio-media{background:#fef3c7;color:#92400e}.prio-bassa{background:#dcfce7;color:#166534}
+.btn-del-todo{background:none;border:none;color:#ddd;cursor:pointer;font-size:18px;padding:2px 6px;line-height:1}
+.btn-del-todo:hover{color:#dc2626}
+.analyzer-wrap{max-width:860px}
+.input-wrap{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem}
+.input-row{display:flex;gap:8px}
+.input-row input{flex:1;background:#fafafa;border:1px solid #e5e5e5;border-radius:8px;padding:10px 14px;font-size:14px;font-family:'Inter',sans-serif;outline:none}
+.an-status{margin-top:12px;font-size:13px;color:#aaa;display:flex;align-items:center;gap:8px;min-height:20px}
+.spinner{width:14px;height:14px;border:2px solid #e5e5e5;border-top-color:#1a1a1a;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.overall{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:1.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:1.5rem}
+.overall-score{font-size:56px;font-weight:600;line-height:1;min-width:80px;text-align:center}
+.sg{color:#16a34a}.sm{color:#d97706}.sb{color:#dc2626}
+.overall-title{font-size:16px;font-weight:600;margin-bottom:4px}.overall-sub{font-size:13px;color:#666;line-height:1.5}
+.score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1rem}
+.score-card{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:.875rem;text-align:center}
+.sc-label{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;font-weight:500}
+.sc-num{font-size:22px;font-weight:600}
+.an-section{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:1.125rem 1.25rem;margin-bottom:10px}
+.an-head{font-size:13px;font-weight:600;margin-bottom:12px}
+.an-items{display:flex;flex-direction:column;gap:10px}
+.an-item{display:flex;align-items:flex-start;gap:10px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.dok{background:#16a34a}.dwarn{background:#d97706}.derr{background:#dc2626}
+.item-main{font-size:13px;font-weight:500}.item-detail{font-size:12px;color:#888;margin-top:2px;line-height:1.5}
+.actions-list{display:flex;flex-direction:column;gap:8px}
+.action-item{display:flex;align-items:flex-start;gap:12px}
+.action-num{width:24px;height:24px;border-radius:50%;background:#f5f5f3;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.action-text{font-size:13px;padding-top:3px}
+.btn-export{background:none;border:1px solid #e5e5e5;border-radius:8px;padding:8px 16px;font-size:12px;cursor:pointer;color:#aaa;font-family:'Inter',sans-serif;margin-top:1rem}
+.btn-export:hover{color:#1a1a1a;border-color:#aaa}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border:1px solid #e5e5e5;border-radius:14px;padding:1.75rem;width:min(540px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.12)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.modal-title{font-size:15px;font-weight:600}
+.btn-close{background:none;border:none;color:#aaa;cursor:pointer;font-size:22px;line-height:1;padding:0 4px}
+.btn-close:hover{color:#1a1a1a}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:11px;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.04em}
+.form-group input,.form-group select,.form-group textarea{background:#fafafa;border:1px solid #e5e5e5;border-radius:8px;padding:8px 11px;color:#1a1a1a;font-size:13px;font-family:'Inter',sans-serif;outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:#1a1a1a;background:#fff}
+.form-group textarea{resize:vertical;min-height:65px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;align-items:center}
+.btn-cancel{background:none;border:1px solid #e5e5e5;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;color:#999;font-family:'Inter',sans-serif}
+.btn-cancel:hover{border-color:#aaa;color:#1a1a1a}
+.btn-save{background:#1a1a1a;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+.btn-save:hover{opacity:.8}
+.btn-del{background:none;border:1px solid #fecaca;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;color:#dc2626;margin-right:auto;font-family:'Inter',sans-serif}
+.btn-del:hover{background:#fee2e2}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;border-radius:8px;padding:11px 16px;font-size:13px;color:#fff;z-index:200;transform:translateY(80px);opacity:0;transition:all .25s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:#16a34a}.toast.error{background:#dc2626}
+.empty{text-align:center;padding:3rem;color:#aaa;font-size:13px}
+.loading{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+@media(max-width:700px){main{padding:1rem}header{padding:0 1rem}.nav-btn{padding:6px 10px;font-size:12px}.form-grid{grid-template-columns:1fr}.full{grid-column:1}.overall{flex-direction:column;text-align:center}.input-row{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Snazzy Agency</div>
+  <nav>
+    <button class="nav-btn active" id="nav-crm" onclick="showPage('crm',this)">CRM</button>
+    <button class="nav-btn" id="nav-agenda" onclick="showPage('agenda',this)">Agenda</button>
+    <button class="nav-btn" id="nav-analyzer" onclick="showPage('analyzer',this)">Analizzatore</button>
+    <button class="nav-btn" id="nav-seo" onclick="showPage('seo',this)">SEO Auto</button>
+  </nav>
+  <button class="btn-new" id="btnNew" onclick="handleNew()">+ Nuovo cliente</button>
+</header>
+
+<main>
+<!-- CRM -->
+<div class="page active" id="page-crm">
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Clienti totali</div><div class="kpi-val" id="k-tot">-</div></div>
+    <div class="kpi"><div class="kpi-label">In lavorazione</div><div class="kpi-val" id="k-att">-</div></div>
+    <div class="kpi"><div class="kpi-label">Consegnati</div><div class="kpi-val" id="k-cons">-</div></div>
+    <div class="kpi"><div class="kpi-label">Incassato</div><div class="kpi-val green" id="k-inc">-</div></div>
+    <div class="kpi"><div class="kpi-label">Da incassare</div><div class="kpi-val" id="k-att2">-</div></div>
+  </div>
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Cerca cliente..." oninput="renderClients()">
+    <select id="filterStato" onchange="renderClients()">
+      <option value="">Tutti gli stati</option>
+      <option>Da iniziare</option><option>In corso</option><option>Revisioni</option><option>Consegnato</option>
+    </select>
+    <select id="filterPag" onchange="renderClients()">
+      <option value="">Tutti i pagamenti</option>
+      <option>Non pagato</option><option>Acconto</option><option>Pagato</option>
+    </select>
+    <span class="count" id="countLabel"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Cliente</th><th>Progetto</th><th>Telefono</th><th>Telegram</th><th>Prezzo</th><th>Scadenza</th><th>Stato</th><th>Pagamento</th><th>Note</th><th></th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="10"><div class="loading">Caricamento...</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- AGENDA -->
+<div class="page" id="page-agenda">
+  <div class="stabs">
+    <button class="stab active" id="stab-apt" onclick="switchAgendaTab('apt')">Appuntamenti</button>
+    <button class="stab" id="stab-todo" onclick="switchAgendaTab('todo')">To-do</button>
+  </div>
+  <div id="sec-apt"><div class="apt-list" id="aptList"><div class="loading">Caricamento...</div></div></div>
+  <div id="sec-todo" style="display:none"><div class="todo-list" id="todoList"><div class="loading">Caricamento...</div></div></div>
+</div>
+
+<!-- ANALIZZATORE -->
+<div class="page" id="page-analyzer">
+  <div class="analyzer-wrap">
+    <div style="margin-bottom:1.5rem">
+      <div style="font-size:20px;font-weight:600;margin-bottom:6px">Analisi sito web</div>
+      <div style="color:#aaa;font-size:13px">SEO, performance, UX e sicurezza — report in secondi</div>
+    </div>
+    <div class="input-wrap">
+      <div class="input-row">
+        <input type="text" id="urlInput" placeholder="https://esempio.com">
+        <button class="btn-new" id="btnAnalyze" onclick="startAnalysis()">Analizza</button>
+      </div>
+      <div class="an-status" id="anStatus"></div>
+    </div>
+    <div id="analyzerResults"></div>
+  </div>
+</div>
+
+<!-- SEO AUTO -->
+<div class="page" id="page-seo">
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Clienti SEO</div><div class="kpi-val" id="sk-tot">-</div></div>
+    <div class="kpi"><div class="kpi-label">Attivi</div><div class="kpi-val green" id="sk-att">-</div></div>
+    <div class="kpi"><div class="kpi-label">In elaborazione</div><div class="kpi-val" id="sk-run">-</div></div>
+    <div class="kpi"><div class="kpi-label">Completati</div><div class="kpi-val" id="sk-done">-</div></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Cliente</th><th>URL</th><th>CMS</th><th>Email report</th><th>Ultimo run</th><th>Stato</th><th>Attivo</th><th></th></tr></thead>
+      <tbody id="seoTbody"><tr><td colspan="8"><div class="loading">Caricamento...</div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+</main>
+
+<!-- MODALS -->
+<!-- Cliente -->
+<div class="overlay" id="overlayClient">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="mClientTitle">Nuovo cliente</div><button class="btn-close" onclick="closeModal('Client')">x</button></div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Nome cliente</label><input id="f-nome" placeholder="Es. Mario Rossi"></div>
+      <div class="form-group full"><label>Tipo progetto</label><input id="f-tipo" placeholder="Es. Sito vetrina, E-commerce"></div>
+      <div class="form-group"><label>Telefono</label><input id="f-tel" placeholder="+39 ..."></div>
+      <div class="form-group"><label>Telegram</label><input id="f-tg" placeholder="@username"></div>
+      <div class="form-group"><label>Prezzo (euro)</label><input id="f-prezzo" type="number" placeholder="149"></div>
+      <div class="form-group"><label>Data scadenza</label><input id="f-data" type="date"></div>
+      <div class="form-group"><label>Stato progetto</label>
+        <select id="f-stato"><option>Da iniziare</option><option>In corso</option><option>Revisioni</option><option>Consegnato</option></select>
+      </div>
+      <div class="form-group"><label>Stato pagamento</label>
+        <select id="f-pag"><option>Non pagato</option><option>Acconto</option><option>Pagato</option></select>
+      </div>
+      <div class="form-group full"><label>Note</label><textarea id="f-note" placeholder="Dettagli..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-del" id="btnDelClient" onclick="deleteClient()" style="display:none">Elimina</button>
+      <button class="btn-cancel" onclick="closeModal('Client')">Annulla</button>
+      <button class="btn-save" onclick="saveClient()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Appuntamento -->
+<div class="overlay" id="overlayApt">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="mAptTitle">Nuovo appuntamento</div><button class="btn-close" onclick="closeModal('Apt')">x</button></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Data</label><input id="a-data" type="date"></div>
+      <div class="form-group"><label>Ora</label><input id="a-ora" type="time"></div>
+      <div class="form-group full"><label>Cliente / Titolo</label><input id="a-cliente" placeholder="Es. Mario Rossi - Incontro"></div>
+      <div class="form-group full"><label>Luogo</label><input id="a-luogo" placeholder="Es. Via Roma 1 / Zoom"></div>
+      <div class="form-group full"><label>Note</label><textarea id="a-note" placeholder="Dettagli..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-del" id="btnDelApt" onclick="deleteApt()" style="display:none">Elimina</button>
+      <button class="btn-cancel" onclick="closeModal('Apt')">Annulla</button>
+      <button class="btn-save" onclick="saveApt()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- Todo -->
+<div class="overlay" id="overlayTodo">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="mTodoTitle">Nuovo task</div><button class="btn-close" onclick="closeModal('Todo')">x</button></div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Task</label><input id="t-task" placeholder="Es. Mandare preventivo"></div>
+      <div class="form-group"><label>Priorita</label>
+        <select id="t-prio"><option>Alta</option><option>Media</option><option>Bassa</option></select>
+      </div>
+      <div class="form-group"><label>Scadenza</label><input id="t-scad" type="date"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-del" id="btnDelTodo" onclick="deleteTodo()" style="display:none">Elimina</button>
+      <button class="btn-cancel" onclick="closeModal('Todo')">Annulla</button>
+      <button class="btn-save" onclick="saveTodo()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEO Client -->
+<div class="overlay" id="overlaySeo">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="mSeoTitle">Nuovo cliente SEO</div><button class="btn-close" onclick="closeModal('Seo')">x</button></div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Nome cliente</label><input id="s-nome" placeholder="Es. Mario Rossi"></div>
+      <div class="form-group full"><label>URL sito</label><input id="s-url" placeholder="https://esempio.com"></div>
+      <div class="form-group"><label>CMS</label>
+        <select id="s-cms" onchange="toggleCmsFields()"><option>WordPress</option><option>Shopify</option><option>Altro</option></select>
+      </div>
+      <div class="form-group"><label>Email report</label><input id="s-email" type="email" placeholder="cliente@email.com"></div>
+      <div class="form-group full" id="wp-url-field"><label>WordPress URL</label><input id="s-wp-url" placeholder="https://esempio.com"></div>
+      <div class="form-group" id="wp-user-field"><label>Username WP</label><input id="s-wp-user" placeholder="admin"></div>
+      <div class="form-group" id="wp-pass-field"><label>App Password WP</label><input id="s-wp-pass" type="password" placeholder="xxxx xxxx xxxx"></div>
+      <div class="form-group" id="sh-url-field" style="display:none"><label>Shopify Store URL</label><input id="s-sh-url" placeholder="store.myshopify.com"></div>
+      <div class="form-group" id="sh-key-field" style="display:none"><label>Shopify API Key</label><input id="s-sh-key" type="password" placeholder="shpat_..."></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-del" id="btnDelSeo" onclick="deleteSeoClient()" style="display:none">Elimina</button>
+      <button class="btn-cancel" onclick="closeModal('Seo')">Annulla</button>
+      <button class="btn-save" onclick="saveSeoClient()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SB = 'https://orbhujneidbioofglyxw.supabase.co';
+var KEY = 'sb_publishable_6TahFsEEw7BeEpDQxvqG4Q_DorUOIoA';
+var clients=[], appointments=[], todos=[], seoClients=[];
+var editClientId=null, editAptId=null, editTodoId=null, editSeoId=null;
+var currentPage='crm', agendaTab='apt';
+
+async function api(method, table, query, body) {
+  var url = SB+'/rest/v1/'+table+(query ? '?'+query : '');
+  var res = await fetch(url, {
+    method: method,
+    headers: {'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Accept':'application/json','Prefer':'return=representation'},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) { var e=await res.json().catch(function(){return{};}); throw new Error(e.message||'Errore'); }
+  if (method==='DELETE') return null;
+  var d=await res.json();
+  return Array.isArray(d)?d:(d?[d]:[]);
+}
+
+async function loadAll() {
+  try{clients=await api('GET','clients','select=*');}catch(e){clients=[];}
+  try{appointments=await api('GET','appointments','select=*&order=data.asc,ora.asc');}catch(e){appointments=[];}
+  try{todos=await api('GET','todos','select=*&order=fatto.asc,scadenza.asc');}catch(e){todos=[];}
+  try{seoClients=await api('GET','seo_clients','select=*&order=created_at.desc');}catch(e){seoClients=[];}
+  renderClients(); renderApt(); renderTodo(); renderSeo();
+}
+
+function showPage(p, btn) {
+  currentPage = p;
+  document.querySelectorAll('.page').forEach(function(el){el.classList.remove('active');});
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(function(el){el.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  var btnNew = document.getElementById('btnNew');
+  if(p==='analyzer'){btnNew.style.display='none';}
+  else {
+    btnNew.style.display='flex';
+    var labels={crm:'+ Nuovo cliente',agenda:agendaTab==='apt'?'+ Appuntamento':'+ Task',seo:'+ Cliente SEO'};
+    btnNew.textContent=labels[p]||'+ Nuovo';
+  }
+}
+
+function handleNew() {
+  if(currentPage==='crm') openModal('Client',null);
+  else if(currentPage==='agenda'){if(agendaTab==='apt')openModal('Apt',null);else openModal('Todo',null);}
+  else if(currentPage==='seo') openModal('Seo',null);
+}
+
+function switchAgendaTab(tab) {
+  agendaTab=tab;
+  document.getElementById('stab-apt').classList.toggle('active',tab==='apt');
+  document.getElementById('stab-todo').classList.toggle('active',tab==='todo');
+  document.getElementById('sec-apt').style.display=tab==='apt'?'block':'none';
+  document.getElementById('sec-todo').style.display=tab==='todo'?'block':'none';
+  document.getElementById('btnNew').textContent=tab==='apt'?'+ Appuntamento':'+ Task';
+}
+
+function sc(s){var m={'Da iniziare':'b-da','In corso':'b-in','Revisioni':'b-rev','Consegnato':'b-cons'};return m[s]||'b-da';}
+function pc(p){var m={'Non pagato':'b-nonpag','Acconto':'b-acc','Pagato':'b-pag'};return m[p]||'b-nonpag';}
+
+function renderClients() {
+  var q=document.getElementById('search').value.toLowerCase();
+  var fS=document.getElementById('filterStato').value;
+  var fP=document.getElementById('filterPag').value;
+  var list=clients.filter(function(c){return(!q||(c.nome||'').toLowerCase().includes(q)||(c.tipo||'').toLowerCase().includes(q))&&(!fS||c.stato===fS)&&(!fP||c.pagamento===fP);});
+  document.getElementById('countLabel').textContent=list.length+' clienti';
+  var tb=document.getElementById('tbody');
+  if(!list.length){tb.innerHTML='<tr><td colspan="10"><div class="empty">Nessun cliente</div></td></tr>';return;}
+  tb.innerHTML=list.map(function(c){
+    var pr=c.prezzo!=null?'euro'+Number(c.prezzo).toLocaleString('it-IT'):'--';
+    var dt=c.data?new Date(c.data+'T00:00:00').toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'}):'--';
+    return '<tr><td class="nome-cell">'+esc(c.nome||'--')+'</td><td class="muted">'+esc(c.tipo||'--')+'</td><td class="muted">'+esc(c.tel||'--')+'</td><td class="muted">'+esc(c.tg||'--')+'</td><td>'+pr+'</td><td class="muted">'+dt+'</td><td><span class="badge '+sc(c.stato)+'">'+esc(c.stato||'--')+'</span></td><td><span class="badge '+pc(c.pagamento)+'">'+esc(c.pagamento||'--')+'</span></td><td class="muted" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.note||'')+'</td><td><button class="btn-edit" onclick="editClient('+JSON.stringify(c.id)+')">Modifica</button></td></tr>';
+  }).join('');
+  var inc=clients.filter(function(c){return c.pagamento==='Pagato';}).reduce(function(s,c){return s+(Number(c.prezzo)||0);},0);
+  var att=clients.filter(function(c){return c.pagamento!=='Pagato';}).reduce(function(s,c){return s+(Number(c.prezzo)||0);},0);
+  document.getElementById('k-tot').textContent=clients.length;
+  document.getElementById('k-att').textContent=clients.filter(function(c){return c.stato==='In corso'||c.stato==='Revisioni';}).length;
+  document.getElementById('k-cons').textContent=clients.filter(function(c){return c.stato==='Consegnato';}).length;
+  document.getElementById('k-inc').textContent='E'+inc.toLocaleString('it-IT');
+  document.getElementById('k-att2').textContent='E'+att.toLocaleString('it-IT');
+}
+
+function editClient(id){openModal('Client',id);}
+
+function renderApt() {
+  var el=document.getElementById('aptList');
+  if(!appointments.length){el.innerHTML='<div class="empty">Nessun appuntamento</div>';return;}
+  el.innerHTML=appointments.map(function(a){
+    var d=a.data?new Date(a.data+'T00:00:00'):null;
+    var day=d?d.getDate():'--'; var month=d?d.toLocaleDateString('it-IT',{month:'short'}).toUpperCase():'';
+    var ora=a.ora?a.ora.slice(0,5):'';
+    return '<div class="apt-card" onclick="editApt('+JSON.stringify(a.id)+')"><div class="apt-date"><div class="apt-day">'+day+'</div><div class="apt-month">'+month+'</div></div><div><div class="apt-cliente">'+esc(a.cliente||'--')+'</div><div class="apt-meta">'+(ora?'<span>'+ora+'</span>':'')+(a.luogo?'<span>'+esc(a.luogo)+'</span>':'')+'</div>'+(a.note?'<div class="apt-note">'+esc(a.note)+'</div>':'')+'</div></div>';
+  }).join('');
+}
+
+function editApt(id){openModal('Apt',id);}
+
+function renderTodo() {
+  var el=document.getElementById('todoList');
+  if(!todos.length){el.innerHTML='<div class="empty">Nessun task</div>';return;}
+  var pm={'Alta':'prio-alta','Media':'prio-media','Bassa':'prio-bassa'};
+  el.innerHTML=todos.map(function(t){
+    var sc2=t.scadenza?new Date(t.scadenza+'T00:00:00').toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}):'';
+    return '<div class="todo-item'+(t.fatto?' done':'')+'"><div class="todo-check'+(t.fatto?' checked':'')+'" onclick="toggleTodo('+JSON.stringify(t.id)+')">'+(t.fatto?'v':'')+'</div><div style="flex:1;cursor:pointer" onclick="editTodo('+JSON.stringify(t.id)+')"><div class="todo-task">'+esc(t.task||'--')+'</div><div class="todo-meta"><span class="prio '+(pm[t.priorita]||'prio-media')+'">'+esc(t.priorita||'')+'</span>'+(sc2?'<span>'+sc2+'</span>':'')+'</div></div><button class="btn-del-todo" onclick="quickDelTodo('+JSON.stringify(t.id)+')">x</button></div>';
+  }).join('');
+}
+
+function editTodo(id){openModal('Todo',id);}
+
+function renderSeo() {
+  document.getElementById('sk-tot').textContent=seoClients.length;
+  document.getElementById('sk-att').textContent=seoClients.filter(function(c){return c.attivo;}).length;
+  document.getElementById('sk-run').textContent=seoClients.filter(function(c){return c.stato==='In elaborazione';}).length;
+  document.getElementById('sk-done').textContent=seoClients.filter(function(c){return c.stato==='Completato';}).length;
+  var tb=document.getElementById('seoTbody');
+  if(!seoClients.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Nessun cliente SEO</div></td></tr>';return;}
+  tb.innerHTML=seoClients.map(function(c){
+    var run=c.ultimo_run?new Date(c.ultimo_run).toLocaleDateString('it-IT'):'--';
+    var st=c.stato==='Completato'?'b-cons':c.stato==='In elaborazione'?'b-in':'b-da';
+    return '<tr><td class="nome-cell">'+esc(c.nome||'--')+'</td><td class="muted" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.url||'--')+'</td><td><span class="badge b-da">'+esc(c.cms||'--')+'</span></td><td class="muted">'+esc(c.email_report||'--')+'</td><td class="muted">'+run+'</td><td><span class="badge '+st+'">'+esc(c.stato||'In attesa')+'</span></td><td>'+(c.attivo?'Si':'No')+'</td><td><button class="btn-edit" onclick="editSeo('+JSON.stringify(c.id)+')">Modifica</button></td></tr>';
+  }).join('');
+}
+
+function editSeo(id){openModal('Seo',id);}
+
+function openModal(type, id) {
+  if(type==='Client'){
+    editClientId=id||null;
+    var c=id?(clients.find(function(x){return x.id===id;})||{}):{};
+    document.getElementById('mClientTitle').textContent=id?'Modifica cliente':'Nuovo cliente';
+    document.getElementById('f-nome').value=c.nome||'';
+    document.getElementById('f-tipo').value=c.tipo||'';
+    document.getElementById('f-tel').value=c.tel||'';
+    document.getElementById('f-tg').value=c.tg||'';
+    document.getElementById('f-prezzo').value=c.prezzo||'';
+    document.getElementById('f-data').value=c.data||'';
+    document.getElementById('f-stato').value=c.stato||'Da iniziare';
+    document.getElementById('f-pag').value=c.pagamento||'Non pagato';
+    document.getElementById('f-note').value=c.note||'';
+    document.getElementById('btnDelClient').style.display=id?'inline-block':'none';
+  } else if(type==='Apt'){
+    editAptId=id||null;
+    var a=id?(appointments.find(function(x){return x.id===id;})||{}):{};
+    document.getElementById('mAptTitle').textContent=id?'Modifica appuntamento':'Nuovo appuntamento';
+    document.getElementById('a-data').value=a.data||'';
+    document.getElementById('a-ora').value=a.ora?a.ora.slice(0,5):'';
+    document.getElementById('a-cliente').value=a.cliente||'';
+    document.getElementById('a-luogo').value=a.luogo||'';
+    document.getElementById('a-note').value=a.note||'';
+    document.getElementById('btnDelApt').style.display=id?'inline-block':'none';
+  } else if(type==='Todo'){
+    editTodoId=id||null;
+    var t=id?(todos.find(function(x){return x.id===id;})||{}):{};
+    document.getElementById('mTodoTitle').textContent=id?'Modifica task':'Nuovo task';
+    document.getElementById('t-task').value=t.task||'';
+    document.getElementById('t-prio').value=t.priorita||'Media';
+    document.getElementById('t-scad').value=t.scadenza||'';
+    document.getElementById('btnDelTodo').style.display=id?'inline-block':'none';
+  } else if(type==='Seo'){
+    editSeoId=id||null;
+    var s=id?(seoClients.find(function(x){return x.id===id;})||{}):{};
+    document.getElementById('mSeoTitle').textContent=id?'Modifica cliente SEO':'Nuovo cliente SEO';
+    document.getElementById('s-nome').value=s.nome||'';
+    document.getElementById('s-url').value=s.url||'';
+    document.getElementById('s-cms').value=s.cms||'WordPress';
+    document.getElementById('s-email').value=s.email_report||'';
+    document.getElementById('s-wp-url').value=s.wp_url||'';
+    document.getElementById('s-wp-user').value=s.wp_user||'';
+    document.getElementById('s-wp-pass').value=s.wp_pass||'';
+    document.getElementById('s-sh-url').value=s.shopify_url||'';
+    document.getElementById('s-sh-key').value=s.shopify_key||'';
+    document.getElementById('btnDelSeo').style.display=id?'inline-block':'none';
+    toggleCmsFields();
+  }
+  document.getElementById('overlay'+type).classList.add('open');
+}
+
+function closeModal(type){
+  document.getElementById('overlay'+type).classList.remove('open');
+  if(type==='Client')editClientId=null;
+  else if(type==='Apt')editAptId=null;
+  else if(type==='Todo')editTodoId=null;
+  else if(type==='Seo')editSeoId=null;
+}
+
+function toggleCmsFields(){
+  var cms=document.getElementById('s-cms').value;
+  var wp=cms==='WordPress'; var sh=cms==='Shopify';
+  document.getElementById('wp-url-field').style.display=wp?'flex':'none';
+  document.getElementById('wp-user-field').style.display=wp?'flex':'none';
+  document.getElementById('wp-pass-field').style.display=wp?'flex':'none';
+  document.getElementById('sh-url-field').style.display=sh?'flex':'none';
+  document.getElementById('sh-key-field').style.display=sh?'flex':'none';
+}
+
+async function saveClient(){
+  var body={nome:document.getElementById('f-nome').value.trim(),tipo:document.getElementById('f-tipo').value.trim(),tel:document.getElementById('f-tel').value.trim(),tg:document.getElementById('f-tg').value.trim(),prezzo:document.getElementById('f-prezzo').value||null,data:document.getElementById('f-data').value||null,stato:document.getElementById('f-stato').value,pagamento:document.getElementById('f-pag').value,note:document.getElementById('f-note').value.trim()};
+  if(!body.nome){showToast('Inserisci il nome','error');return;}
+  try{
+    if(editClientId)await api('PATCH','clients','id=eq.'+editClientId,body);
+    else await api('POST','clients','',body);
+    showToast('Salvato!','success');closeModal('Client');
+    clients=await api('GET','clients','select=*');renderClients();
+  }catch(e){showToast('Errore: '+e.message,'error');}
+}
+
+async function deleteClient(){
+  if(!editClientId||!confirm('Eliminare?'))return;
+  try{await api('DELETE','clients','id=eq.'+editClientId);showToast('Eliminato','success');closeModal('Client');clients=await api('GET','clients','select=*');renderClients();}catch(e){showToast('Errore','error');}
+}
+
+async function saveApt(){
+  var body={data:document.getElementById('a-data').value||null,ora:document.getElementById('a-ora').value||null,cliente:document.getElementById('a-cliente').value.trim(),luogo:document.getElementById('a-luogo').value.trim(),note:document.getElementById('a-note').value.trim()};
+  if(!body.cliente){showToast('Inserisci un titolo','error');return;}
+  try{
+    if(editAptId)await api('PATCH','appointments','id=eq.'+editAptId,body);
+    else await api('POST','appointments','',body);
+    showToast('Salvato!','success');closeModal('Apt');
+    appointments=await api('GET','appointments','select=*&order=data.asc,ora.asc');renderApt();
+  }catch(e){showToast('Errore: '+e.message,'error');}
+}
+
+async function deleteApt(){
+  if(!editAptId||!confirm('Eliminare?'))return;
+  try{await api('DELETE','appointments','id=eq.'+editAptId);showToast('Eliminato','success');closeModal('Apt');appointments=await api('GET','appointments','select=*&order=data.asc,ora.asc');renderApt();}catch(e){showToast('Errore','error');}
+}
+
+async function saveTodo(){
+  var body={task:document.getElementById('t-task').value.trim(),priorita:document.getElementById('t-prio').value,scadenza:document.getElementById('t-scad').value||null,fatto:false};
+  if(!body.task){showToast('Inserisci il task','error');return;}
+  try{
+    if(editTodoId)await api('PATCH','todos','id=eq.'+editTodoId,body);
+    else await api('POST','todos','',body);
+    showToast('Salvato!','success');closeModal('Todo');
+    todos=await api('GET','todos','select=*&order=fatto.asc,scadenza.asc');renderTodo();
+  }catch(e){showToast('Errore: '+e.message,'error');}
+}
+
+async function deleteTodo(){
+  if(!editTodoId||!confirm('Eliminare?'))return;
+  try{await api('DELETE','todos','id=eq.'+editTodoId);showToast('Eliminato','success');closeModal('Todo');todos=await api('GET','todos','select=*&order=fatto.asc,scadenza.asc');renderTodo();}catch(e){showToast('Errore','error');}
+}
+
+async function toggleTodo(id){
+  var t=todos.find(function(x){return x.id===id;});if(!t)return;
+  try{await api('PATCH','todos','id=eq.'+id,{fatto:!t.fatto});todos=await api('GET','todos','select=*&order=fatto.asc,scadenza.asc');renderTodo();}catch(e){showToast('Errore','error');}
+}
+
+async function quickDelTodo(id){
+  if(!confirm('Eliminare?'))return;
+  try{await api('DELETE','todos','id=eq.'+id);todos=await api('GET','todos','select=*&order=fatto.asc,scadenza.asc');renderTodo();}catch(e){showToast('Errore','error');}
+}
+
+async function saveSeoClient(){
+  var body={nome:document.getElementById('s-nome').value.trim(),url:document.getElementById('s-url').value.trim(),cms:document.getElementById('s-cms').value,email_report:document.getElementById('s-email').value.trim(),wp_url:document.getElementById('s-wp-url').value.trim(),wp_user:document.getElementById('s-wp-user').value.trim(),wp_pass:document.getElementById('s-wp-pass').value.trim(),shopify_url:document.getElementById('s-sh-url').value.trim(),shopify_key:document.getElementById('s-sh-key').value.trim(),attivo:true,stato:'In attesa'};
+  if(!body.nome){showToast('Inserisci il nome','error');return;}
+  try{
+    if(editSeoId)await api('PATCH','seo_clients','id=eq.'+editSeoId,body);
+    else await api('POST','seo_clients','',body);
+    showToast('Salvato!','success');closeModal('Seo');
+    seoClients=await api('GET','seo_clients','select=*&order=created_at.desc');renderSeo();
+  }catch(e){showToast('Errore: '+e.message,'error');}
+}
+
+async function deleteSeoClient(){
+  if(!editSeoId||!confirm('Eliminare?'))return;
+  try{await api('DELETE','seo_clients','id=eq.'+editSeoId);showToast('Eliminato','success');closeModal('Seo');seoClients=await api('GET','seo_clients','select=*&order=created_at.desc');renderSeo();}catch(e){showToast('Errore','error');}
+}
+
+async function startAnalysis(){
+  var url=document.getElementById('urlInput').value.trim();
+  if(!url){setAnStatus('Inserisci un URL');return;}
+  if(!url.startsWith('http'))url='https://'+url;
+  document.getElementById('btnAnalyze').disabled=true;
+  document.getElementById('analyzerResults').innerHTML='';
+  setAnStatus('Analisi in corso...',true);
+  try{
+    var res=await fetch('/.netlify/functions/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
+    var text=await res.text(); var data=JSON.parse(text);
+    if(data.error)throw new Error(data.error);
+    renderAnalysis(data,url);setAnStatus('');
+  }catch(e){setAnStatus('Errore: '+e.message);}
+  document.getElementById('btnAnalyze').disabled=false;
+}
+
+function anSc(n){return n>=70?'sg':n>=45?'sm':'sb';}
+function anDc(s){return s==='ok'?'dok':s==='warn'?'dwarn':'derr';}
+
+function renderAnalysis(d,url){
+  var html='<div class="overall"><div class="overall-score '+anSc(d.overall_score)+'">'+d.overall_score+'</div><div><div class="overall-title">'+esc(d.overall_label)+' -- '+esc(url)+'</div><div class="overall-sub">'+esc(d.overall_summary)+'</div></div></div>';
+  html+='<div class="score-grid">';
+  d.categories.forEach(function(c){html+='<div class="score-card"><div class="sc-label">'+esc(c.name.split(' ')[0])+'</div><div class="sc-num '+anSc(c.score)+'">'+c.score+'</div></div>';});
+  html+='</div>';
+  d.categories.forEach(function(c){
+    html+='<div class="an-section"><div class="an-head">'+esc(c.name)+'</div><div class="an-items">';
+    c.items.forEach(function(i){html+='<div class="an-item"><div class="dot '+anDc(i.status)+'"></div><div><div class="item-main">'+esc(i.text)+'</div>'+(i.detail?'<div class="item-detail">'+esc(i.detail)+'</div>':'')+'</div></div>';});
+    html+='</div></div>';
+  });
+  if(d.top_actions&&d.top_actions.length){
+    html+='<div class="an-section"><div class="an-head">Azioni prioritarie</div><div class="actions-list">';
+    d.top_actions.forEach(function(a,i){html+='<div class="action-item"><div class="action-num">'+(i+1)+'</div><div class="action-text">'+esc(a)+'</div></div>';});
+    html+='</div></div>';
+  }
+  html+='<button class="btn-export" onclick="exportReport()">Esporta report .txt</button>';
+  document.getElementById('analyzerResults').innerHTML=html;
+  window._r=d;window._u=url;
+}
+
+function exportReport(){
+  if(!window._r)return;
+  var d=window._r,txt='REPORT -- '+window._u+'\nScore: '+d.overall_score+'/100\n'+d.overall_summary+'\n\n';
+  d.categories.forEach(function(c){txt+='=== '+c.name+' ('+c.score+'/100) ===\n';c.items.forEach(function(i){txt+=(i.status==='ok'?'v':i.status==='warn'?'!':'x')+' '+i.text+'\n'+(i.detail?'  -> '+i.detail+'\n':'');});txt+='\n';});
+  if(d.top_actions){txt+='=== AZIONI ===\n';d.top_actions.forEach(function(a,i){txt+=(i+1)+'. '+a+'\n';});}
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='report.txt';a.click();
+}
+
+function setAnStatus(msg,loading){
+  var el=document.getElementById('anStatus');
+  el.innerHTML=msg?((loading?'<div class="spinner"></div>':'')+'<span>'+msg+'</span>'):'';
+}
+
+function showToast(msg,type){
+  var t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');
+  setTimeout(function(){t.className='toast';},3000);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+document.getElementById('urlInput').addEventListener('keydown',function(e){if(e.key==='Enter')startAnalysis();});
+
+['Client','Apt','Todo','Seo'].forEach(function(n){
+  document.getElementById('overlay'+n).addEventListener('click',function(e){if(e.target===this)closeModal(n);});
+});
+
+loadAll();
+</script>
+</body>
+</html>
