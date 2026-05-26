@@ -25,58 +25,45 @@ exports.handler = async function(event) {
     ]);
   }
 
-  // 1. Fetch HTML del sito
-  let html = '';
-  let htmlError = null;
-  try {
-    const res = await timed(
+  const base = new URL(siteUrl).origin;
+  const psUrl = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=' +
+    encodeURIComponent(siteUrl) +
+    '&strategy=mobile&category=performance&category=seo&category=accessibility&category=best-practices';
+
+  // Tutte le fetch in parallelo
+  const [htmlRes, psRes, robotsRes, sitemapRes] = await Promise.allSettled([
+    timed(
       fetch(siteUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SnazzyAnalyzer/1.0)' } }),
       8000
-    );
-    html = (await res.text()).slice(0, 40000);
-  } catch(e) {
-    htmlError = e.message;
+    ).then(r => r.text()).then(t => t.slice(0, 40000)),
+    timed(fetch(psUrl), 9000).then(r => r.json()),
+    timed(fetch(base + '/robots.txt'), 5000).then(r => r.ok ? r.text() : null),
+    timed(fetch(base + '/sitemap.xml'), 5000).then(r => r.ok)
+  ]);
+
+  const html = htmlRes.status === 'fulfilled' ? htmlRes.value : null;
+  const htmlError = htmlRes.status === 'rejected' ? htmlRes.reason.message : null;
+
+  let ps = null;
+  if (psRes.status === 'fulfilled' && psRes.value?.lighthouseResult) {
+    const c = psRes.value.lighthouseResult.categories;
+    const a = psRes.value.lighthouseResult.audits;
+    ps = {
+      performance: Math.round((c.performance?.score || 0) * 100),
+      seo: Math.round((c.seo?.score || 0) * 100),
+      accessibility: Math.round((c.accessibility?.score || 0) * 100),
+      bestPractices: Math.round((c['best-practices']?.score || 0) * 100),
+      fcp: a['first-contentful-paint']?.displayValue || 'n/d',
+      lcp: a['largest-contentful-paint']?.displayValue || 'n/d',
+      cls: a['cumulative-layout-shift']?.displayValue || 'n/d',
+      tbt: a['total-blocking-time']?.displayValue || 'n/d',
+      speedIndex: a['speed-index']?.displayValue || 'n/d',
+    };
   }
 
-  // 2. PageSpeed Insights (mobile)
-  let ps = null;
-  try {
-    const psUrl = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=' +
-      encodeURIComponent(siteUrl) +
-      '&strategy=mobile&category=performance&category=seo&category=accessibility&category=best-practices';
-    const res = await timed(fetch(psUrl), 25000);
-    const data = await res.json();
-    if (data.lighthouseResult) {
-      const c = data.lighthouseResult.categories;
-      const a = data.lighthouseResult.audits;
-      ps = {
-        performance: Math.round((c.performance?.score || 0) * 100),
-        seo: Math.round((c.seo?.score || 0) * 100),
-        accessibility: Math.round((c.accessibility?.score || 0) * 100),
-        bestPractices: Math.round((c['best-practices']?.score || 0) * 100),
-        fcp: a['first-contentful-paint']?.displayValue || 'n/d',
-        lcp: a['largest-contentful-paint']?.displayValue || 'n/d',
-        cls: a['cumulative-layout-shift']?.displayValue || 'n/d',
-        tbt: a['total-blocking-time']?.displayValue || 'n/d',
-        speedIndex: a['speed-index']?.displayValue || 'n/d',
-      };
-    }
-  } catch(e) {}
+  const robotsTxt = robotsRes.status === 'fulfilled' && robotsRes.value ? robotsRes.value.slice(0, 500) : null;
+  const sitemapOk = sitemapRes.status === 'fulfilled' ? !!sitemapRes.value : false;
 
-  // 3. robots.txt e sitemap
-  let robotsTxt = null;
-  let sitemapOk = false;
-  try {
-    const base = new URL(siteUrl).origin;
-    const [r, s] = await Promise.allSettled([
-      timed(fetch(base + '/robots.txt'), 5000),
-      timed(fetch(base + '/sitemap.xml'), 5000)
-    ]);
-    if (r.status === 'fulfilled' && r.value.ok) robotsTxt = (await r.value.text()).slice(0, 500);
-    sitemapOk = s.status === 'fulfilled' && s.value.ok;
-  } catch(e) {}
-
-  // 4. Estrai dati SEO dall'HTML
   let seo = {};
   if (html) {
     const g = (re) => html.match(re)?.[1]?.trim() || '';
@@ -98,7 +85,6 @@ exports.handler = async function(event) {
     };
   }
 
-  // 5. Costruisci il prompt con dati reali
   const dati = `
 URL ANALIZZATO: ${siteUrl}
 
@@ -153,7 +139,7 @@ Rispondi SOLO con JSON valido, zero testo fuori, zero markdown, zero backtick.
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 2048,
         messages: [{ role: 'user', content: prompt }]
       })
