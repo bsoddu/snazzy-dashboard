@@ -1,14 +1,26 @@
 exports.handler = async function(event) {
-  if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  };
+
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+
+  let url;
   try {
-    var body = JSON.parse(event.body);
-    var url = body.url;
-    if (!url) return { statusCode: 400, body: JSON.stringify({error: 'URL mancante'}) };
+    const body = JSON.parse(event.body || '{}');
+    url = body.url;
+    if (!url) return { statusCode: 400, headers, body: JSON.stringify({ error: 'URL mancante' }) };
+    if (!url.startsWith('http')) url = 'https://' + url;
+  } catch(e) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Body non valido' }) };
+  }
 
-    var prompt = `Sei un esperto SEO, UX e conversion rate optimization. Analizza questo sito web: ${url}
+  const prompt = `Sei un esperto SEO, UX e conversion rate optimization. Analizza questo sito web: ${url}
 
-Cerca informazioni reali sul sito, analizza struttura, contenuti, SEO, performance e UX.
-Rispondi SOLO con JSON valido, nessun testo fuori dal JSON.
+Rispondi SOLO con un oggetto JSON valido, senza testo prima o dopo, senza markdown, senza backtick.
 
 {
   "overall_score": <numero 0-100>,
@@ -19,26 +31,27 @@ Rispondi SOLO con JSON valido, nessun testo fuori dal JSON.
       "name": "SEO & Visibilità",
       "score": <0-100>,
       "items": [
-        {"status": "<ok|warn|err>", "text": "<titolo problema o punto forza>", "detail": "<spiegazione e suggerimento concreto>"},
-        {"status": "...", "text": "...", "detail": "..."},
-        {"status": "...", "text": "...", "detail": "..."},
-        {"status": "...", "text": "...", "detail": "..."},
-        {"status": "...", "text": "...", "detail": "..."}
+        {"status": "<ok|warn|err>", "text": "<titolo>", "detail": "<spiegazione>"},
+        {"status": "<ok|warn|err>", "text": "<titolo>", "detail": "<spiegazione>"},
+        {"status": "<ok|warn|err>", "text": "<titolo>", "detail": "<spiegazione>"},
+        {"status": "<ok|warn|err>", "text": "<titolo>", "detail": "<spiegazione>"},
+        {"status": "<ok|warn|err>", "text": "<titolo>", "detail": "<spiegazione>"}
       ]
     },
-    {"name": "Performance & Velocità","score": <0-100>,"items": [<5 items>]},
-    {"name": "UX & Conversione","score": <0-100>,"items": [<5 items>]},
-    {"name": "Contenuto & Copy","score": <0-100>,"items": [<5 items>]},
-    {"name": "Tecnico & Sicurezza","score": <0-100>,"items": [<5 items>]}
+    {"name": "Performance & Velocità", "score": <0-100>, "items": [<5 items>]},
+    {"name": "UX & Conversione", "score": <0-100>, "items": [<5 items>]},
+    {"name": "Contenuto & Copy", "score": <0-100>, "items": [<5 items>]},
+    {"name": "Tecnico & Sicurezza", "score": <0-100>, "items": [<5 items>]}
   ],
   "top_actions": [
-    "<azione prioritaria concreta 1>",
-    "<azione prioritaria concreta 2>",
-    "<azione prioritaria concreta 3>"
+    "<azione prioritaria 1>",
+    "<azione prioritaria 2>",
+    "<azione prioritaria 3>"
   ]
 }`;
 
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
+  try {
+    const apiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -47,20 +60,33 @@ Rispondi SOLO con JSON valido, nessun testo fuori dal JSON.
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
-        messages: [{role: 'user', content: prompt}]
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
 
-    var data = await res.json();
-    if (!data.content) throw new Error(JSON.stringify(data));
-    var text = data.content.map(function(b){ return b.type === 'text' ? b.text : ''; }).join('');
-    var clean = text.replace(/```json|```/g, '').trim();
-    var start = clean.indexOf('{');
-    var end = clean.lastIndexOf('}');
-    var result = JSON.parse(clean.slice(start, end + 1));
-    return { statusCode: 200, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(result) };
+    const data = await apiRes.json();
+
+    if (!apiRes.ok) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: data.error?.message || 'Errore API Anthropic' }) };
+    }
+
+    if (!data.content || !data.content.length) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Risposta vuota da Claude' }) };
+    }
+
+    const text = data.content.find(b => b.type === 'text')?.text || '';
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+
+    if (start === -1 || end === -1) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Risposta non JSON: ' + text.slice(0, 100) }) };
+    }
+
+    const result = JSON.parse(text.slice(start, end + 1));
+    return { statusCode: 200, headers, body: JSON.stringify(result) };
+
   } catch(e) {
-    return { statusCode: 500, headers: {'Content-Type': 'application/json'}, body: JSON.stringify({error: e.message}) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };
   }
 };
