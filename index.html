@@ -766,17 +766,97 @@ function renderAnalysis(d,url){
     html+='</div></div>';
   }
 
-  html+='<button class="btn-export" onclick="exportReport()">Esporta report .txt</button>';
+  html+='<button class="btn-export" onclick="exportReport()">Esporta PDF</button>';
   document.getElementById('analyzerResults').innerHTML=html;
   window._r=d;window._u=url;
 }
 
 function exportReport(){
   if(!window._r)return;
-  var d=window._r,txt='REPORT — '+window._u+'\nScore: '+d.overall_score+'/100\n'+d.overall_summary+'\n\n';
-  d.categories.forEach(function(c){txt+='=== '+c.name+' ('+c.score+'/100) ===\n';c.items.forEach(function(i){txt+=(i.status==='ok'?'✓':i.status==='warn'?'!':'✗')+' '+i.text+'\n'+(i.detail?'  -> '+i.detail+'\n':'');});txt+='\n';});
-  if(d.top_actions){txt+='=== AZIONI ===\n';d.top_actions.forEach(function(a,i){txt+=(i+1)+'. '+a+'\n';});}
-  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='report.txt';a.click();
+  var d=window._r,url=window._u;
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var W=210,ml=15,mr=195,cw=W-ml*2,y=0;
+
+  // Header
+  doc.setFillColor(12,12,14);doc.rect(0,0,W,42,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(255,255,255);doc.text('SnazzyAgency',ml,18);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(170,170,170);doc.text('Web Agency — Analisi SEO & Performance',ml,25);
+  doc.setFillColor(200,241,53);doc.roundedRect(ml,32,58,7,1.5,1.5,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(12,12,14);doc.text('REPORT ANALISI SITO',ml+29,37,{align:'center'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(200,200,200);doc.text(new Date().toLocaleDateString('it-IT'),mr,37,{align:'right'});
+  y=52;
+
+  // Overall
+  var sc=d.overall_score,sc3=sc>=70?[200,241,53]:sc>=45?[245,197,24]:[255,68,68];
+  doc.setFillColor(28,28,31);doc.roundedRect(ml,y,cw,26,2,2,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(38);doc.setTextColor(sc3[0],sc3[1],sc3[2]);doc.text(String(sc),ml+12,y+19);
+  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(240,240,240);doc.text(d.overall_label,ml+32,y+10);
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(120,120,120);doc.text(url,ml+32,y+17);
+  var sumLines=doc.splitTextToSize(d.overall_summary,cw-34);
+  doc.setFontSize(8);doc.setTextColor(160,160,160);doc.text(sumLines.slice(0,2),ml+32,y+23);
+  y+=32;
+
+  // Category scores
+  var catW=(cw-3*(d.categories.length-1))/d.categories.length;
+  d.categories.forEach(function(c,i){
+    var cx=ml+i*(catW+3),cc=c.score>=70?[200,241,53]:c.score>=45?[245,197,24]:[255,68,68];
+    doc.setFillColor(28,28,31);doc.roundedRect(cx,y,catW,20,1.5,1.5,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(cc[0],cc[1],cc[2]);doc.text(String(c.score),cx+catW/2,y+13,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,100,100);
+    doc.text(c.name.split('&')[0].trim(),cx+catW/2,y+18,{align:'center'});
+  });
+  y+=26;
+
+  // Categories detail
+  d.categories.forEach(function(c){
+    if(y>240){doc.addPage();y=15;}
+    var cc=c.score>=70?[200,241,53]:c.score>=45?[245,197,24]:[255,68,68];
+    doc.setFillColor(18,18,20);doc.rect(ml,y,cw,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(cc[0],cc[1],cc[2]);doc.text(c.name,ml+3,y+5.5);
+    doc.setTextColor(150,150,150);doc.text(c.score+'/100',mr-3,y+5.5,{align:'right'});
+    y+=11;
+    c.items.forEach(function(item){
+      if(y>272){doc.addPage();y=15;}
+      var dc=item.status==='ok'?[34,197,94]:item.status==='warn'?[245,197,24]:[255,68,68];
+      doc.setFillColor(dc[0],dc[1],dc[2]);doc.circle(ml+2.5,y+2.5,2,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(220,220,220);doc.text(item.text,ml+7,y+4);
+      y+=7;
+      if(item.detail){
+        if(y>272){doc.addPage();y=15;}
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(120,120,120);
+        var dl=doc.splitTextToSize(item.detail,cw-7);
+        dl.slice(0,2).forEach(function(l){if(y>272){doc.addPage();y=15;}doc.text(l,ml+7,y);y+=4.5;});
+      }
+    });
+    y+=5;
+  });
+
+  // Azioni
+  if(d.top_actions&&d.top_actions.length){
+    if(y>230){doc.addPage();y=15;}
+    doc.setFillColor(18,18,20);doc.rect(ml,y,cw,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(200,241,53);doc.text('AZIONI PRIORITARIE',ml+3,y+5.5);
+    y+=13;
+    d.top_actions.forEach(function(a,i){
+      if(y>272){doc.addPage();y=15;}
+      doc.setFillColor(200,241,53);doc.circle(ml+3,y+3,3,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(12,12,14);doc.text(String(i+1),ml+3,y+4.2,{align:'center'});
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(220,220,220);
+      var al=doc.splitTextToSize(a,cw-10);
+      al.slice(0,3).forEach(function(l){if(y>272){doc.addPage();y=15;}doc.text(l,ml+9,y+4);y+=5;});
+      y+=4;
+    });
+  }
+
+  // Footer
+  doc.setFillColor(20,20,22);doc.rect(0,277,W,20,'F');
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(100,100,100);
+  doc.text('SnazzyAgency  ·  Report generato il '+new Date().toLocaleDateString('it-IT')+'  ·  '+url,W/2,284,{align:'center'});
+  doc.text('soddubruno20@gmail.com  ·  +39 379 272 5909',W/2,290,{align:'center'});
+
+  var fname='Report_SEO_'+url.replace(/https?:\/\//,'').replace(/[^a-z0-9]/gi,'_').slice(0,30)+'.pdf';
+  doc.save(fname);
 }
 
 function setAnStatus(msg,loading){
