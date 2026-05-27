@@ -550,7 +550,7 @@ function renderSeo(){
   var tb=document.getElementById('seoTbody');
   if(!seoClients.length){tb.innerHTML='<tr><td colspan="8"><div class="empty">Nessun cliente SEO</div></td></tr>';return;}
   tb.innerHTML=seoClients.map(function(c){
-    var run=c.ultimo_run?new Date(c.ultimo_run).toLocaleDateString('it-IT'):'--';
+    var run=c.ultimo_run?new Date(c.ultimo_run).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'--';
     var st=c.stato==='Completato'?'b-cons':c.stato==='In elaborazione'?'b-in':'b-da';
     var sid=String(c.id).replace(/'/g,'');
     return '<tr><td class="nome-cell">'+esc(c.nome||'--')+'</td><td class="muted" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.url||'--')+'</td><td><span class="badge b-da">'+esc(c.cms||'--')+'</span></td><td class="muted">'+esc(c.email_report||'--')+'</td><td class="muted">'+run+'</td><td><span class="badge '+st+'">'+esc(c.stato||'In attesa')+'</span></td><td><span class="badge '+(c.attivo?'b-pag':'b-nonpag')+'">'+(c.attivo?'Sì':'No')+'</span></td><td style="display:flex;gap:6px"><button class="btn-edit" data-sid="'+sid+'" onclick="editSeo(this.getAttribute(\'data-sid\'))">Modifica</button><button class="btn-run" id="run-'+sid+'" onclick="runSeoNow(\''+sid+'\',\''+esc(c.url||'')+'\')">▶ Avvia</button></td></tr>';
