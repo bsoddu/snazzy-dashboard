@@ -105,6 +105,20 @@ tr:hover td{background:rgba(200,241,53,.02)}
 .action-text{font-size:13px;padding-top:3px}
 .btn-export{background:none;border:1px solid var(--border2);border-radius:var(--r);padding:8px 16px;font-size:12px;cursor:pointer;color:var(--muted2);font-family:'DM Sans',sans-serif;margin-top:1rem;transition:all .15s}
 .btn-export:hover{color:var(--text);border-color:var(--muted)}
+.score-ring-wrap{position:relative;width:130px;height:130px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.score-ring-num{position:absolute;font-family:'Syne',sans-serif;font-size:38px;font-weight:800;line-height:1}
+.overall-info{flex:1;min-width:0}
+.overall-label{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px}
+.overall-url{font-size:12px;color:var(--muted);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.overall-sub{font-size:13px;color:var(--muted2);line-height:1.6}
+.sc-bar{height:4px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.sc-fill{height:100%;border-radius:2px}
+.an-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.an-head-score{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--surface2)}
+.status-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.si-ok{background:rgba(34,197,94,.15);color:var(--green)}
+.si-warn{background:rgba(245,197,24,.15);color:#f5c518}
+.si-err{background:rgba(255,68,68,.15);color:var(--red)}
 .prev-list{display:flex;flex-direction:column;gap:8px}
 .prev-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:.875rem 1.25rem;display:flex;align-items:center;gap:1rem;transition:border-color .15s}
 .prev-row:hover{border-color:var(--accent)}
@@ -698,23 +712,60 @@ async function startAnalysis(){
 }
 
 function anSc(n){return n>=70?'sg':n>=45?'sm':'sb';}
-function anDc(s){return s==='ok'?'dok':s==='warn'?'dwarn':'derr';}
+function scoreColor(n){return n>=70?'#c8f135':n>=45?'#f5c518':'#ff4444';}
 
 function renderAnalysis(d,url){
-  var html='<div class="overall"><div class="overall-score '+anSc(d.overall_score)+'">'+d.overall_score+'</div><div><div class="overall-title">'+esc(d.overall_label)+' — '+esc(url)+'</div><div class="overall-sub">'+esc(d.overall_summary)+'</div></div></div>';
+  var r=52,circ=2*Math.PI*r,dash=(d.overall_score/100)*circ,col=scoreColor(d.overall_score);
+  var html='<div class="overall">'+
+    '<div class="score-ring-wrap">'+
+      '<svg width="130" height="130" viewBox="0 0 130 130">'+
+        '<circle cx="65" cy="65" r="'+r+'" fill="none" stroke="#222226" stroke-width="8"/>'+
+        '<circle cx="65" cy="65" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="8" stroke-dasharray="'+dash+' '+circ+'" stroke-linecap="round" transform="rotate(-90 65 65)"/>'+
+      '</svg>'+
+      '<div class="score-ring-num '+anSc(d.overall_score)+'">'+d.overall_score+'</div>'+
+    '</div>'+
+    '<div class="overall-info">'+
+      '<div class="overall-label">'+esc(d.overall_label)+'</div>'+
+      '<div class="overall-url">'+esc(url)+'</div>'+
+      '<div class="overall-sub">'+esc(d.overall_summary)+'</div>'+
+    '</div>'+
+  '</div>';
+
   html+='<div class="score-grid">';
-  d.categories.forEach(function(c){html+='<div class="score-card"><div class="sc-label">'+esc(c.name.split(' ')[0])+'</div><div class="sc-num '+anSc(c.score)+'">'+c.score+'</div></div>';});
-  html+='</div>';
   d.categories.forEach(function(c){
-    html+='<div class="an-section"><div class="an-head">'+esc(c.name)+'</div><div class="an-items">';
-    c.items.forEach(function(i){html+='<div class="an-item"><div class="dot '+anDc(i.status)+'"></div><div><div class="item-main">'+esc(i.text)+'</div>'+(i.detail?'<div class="item-detail">'+esc(i.detail)+'</div>':'')+'</div></div>';});
+    var cc=scoreColor(c.score);
+    html+='<div class="score-card">'+
+      '<div class="sc-label">'+esc(c.name)+'</div>'+
+      '<div class="sc-num '+anSc(c.score)+'">'+c.score+'</div>'+
+      '<div class="sc-bar"><div class="sc-fill" style="width:'+c.score+'%;background:'+cc+'"></div></div>'+
+    '</div>';
+  });
+  html+='</div>';
+
+  d.categories.forEach(function(c){
+    html+='<div class="an-section">'+
+      '<div class="an-head"><span>'+esc(c.name)+'</span><span class="an-head-score '+anSc(c.score)+'">'+c.score+'/100</span></div>'+
+      '<div class="an-items">';
+    c.items.forEach(function(i){
+      var icon=i.status==='ok'?'✓':i.status==='warn'?'!':'✗';
+      html+='<div class="an-item">'+
+        '<div class="status-icon si-'+i.status+'">'+icon+'</div>'+
+        '<div><div class="item-main">'+esc(i.text)+'</div>'+(i.detail?'<div class="item-detail">'+esc(i.detail)+'</div>':'')+'</div>'+
+      '</div>';
+    });
     html+='</div></div>';
   });
+
   if(d.top_actions&&d.top_actions.length){
-    html+='<div class="an-section"><div class="an-head">Azioni prioritarie</div><div class="actions-list">';
-    d.top_actions.forEach(function(a,i){html+='<div class="action-item"><div class="action-num">'+(i+1)+'</div><div class="action-text">'+esc(a)+'</div></div>';});
+    html+='<div class="an-section">'+
+      '<div class="an-head"><span>Azioni prioritarie</span></div>'+
+      '<div class="actions-list">';
+    d.top_actions.forEach(function(a,i){
+      html+='<div class="action-item"><div class="action-num">'+(i+1)+'</div><div class="action-text">'+esc(a)+'</div></div>';
+    });
     html+='</div></div>';
   }
+
   html+='<button class="btn-export" onclick="exportReport()">Esporta report .txt</button>';
   document.getElementById('analyzerResults').innerHTML=html;
   window._r=d;window._u=url;
