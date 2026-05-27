@@ -46,6 +46,11 @@ tr:hover td{background:rgba(200,241,53,.02)}
 .b-acc{background:rgba(245,197,24,.12);color:#f5c518}
 .b-pag{background:rgba(34,197,94,.12);color:var(--green)}
 .btn-edit{background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 11px;color:var(--muted2);cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-run{background:none;border:1px solid var(--accent);border-radius:6px;padding:4px 11px;color:var(--accent);cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-run:hover{background:var(--accent);color:#0c0c0e}
+.btn-run:disabled{opacity:.5;cursor:not-allowed}
+.btn-del-prev{background:none;border:1px solid var(--border2);border-radius:6px;padding:4px 10px;color:var(--muted);cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-del-prev:hover{border-color:var(--red);color:var(--red)}
 .btn-edit:hover{border-color:var(--accent);color:var(--accent)}
 .stabs{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:3px;width:fit-content;margin-bottom:1.25rem}
 .stab{padding:6px 18px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .15s}
@@ -416,6 +421,8 @@ tr:hover td{background:rgba(200,241,53,.02)}
 <script>
 var SB='https://orbhujneidbioofglyxw.supabase.co';
 var KEY='sb_publishable_6TahFsEEw7BeEpDQxvqG4Q_DorUOIoA';
+var WORKER_URL='https://supabaseurlhttps-production.up.railway.app';
+var WORKER_SECRET='e3043d99c07e8d0ccb29dca2cf462d5486a07ed9a20ef996';
 var clients=[],appointments=[],todos=[],seoClients=[];
 var editClientId=null,editAptId=null,editTodoId=null,editSeoId=null;
 var currentPage='crm',agendaTab='apt';
@@ -545,11 +552,31 @@ function renderSeo(){
     var run=c.ultimo_run?new Date(c.ultimo_run).toLocaleDateString('it-IT'):'--';
     var st=c.stato==='Completato'?'b-cons':c.stato==='In elaborazione'?'b-in':'b-da';
     var sid=String(c.id).replace(/'/g,'');
-    return '<tr><td class="nome-cell">'+esc(c.nome||'--')+'</td><td class="muted" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.url||'--')+'</td><td><span class="badge b-da">'+esc(c.cms||'--')+'</span></td><td class="muted">'+esc(c.email_report||'--')+'</td><td class="muted">'+run+'</td><td><span class="badge '+st+'">'+esc(c.stato||'In attesa')+'</span></td><td><span class="badge '+(c.attivo?'b-pag':'b-nonpag')+'">'+(c.attivo?'Sì':'No')+'</span></td><td><button class="btn-edit" data-sid="'+sid+'" onclick="editSeo(this.getAttribute(\'data-sid\'))">Modifica</button></td></tr>';
+    return '<tr><td class="nome-cell">'+esc(c.nome||'--')+'</td><td class="muted" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.url||'--')+'</td><td><span class="badge b-da">'+esc(c.cms||'--')+'</span></td><td class="muted">'+esc(c.email_report||'--')+'</td><td class="muted">'+run+'</td><td><span class="badge '+st+'">'+esc(c.stato||'In attesa')+'</span></td><td><span class="badge '+(c.attivo?'b-pag':'b-nonpag')+'">'+(c.attivo?'Sì':'No')+'</span></td><td style="display:flex;gap:6px"><button class="btn-edit" data-sid="'+sid+'" onclick="editSeo(this.getAttribute(\'data-sid\'))">Modifica</button><button class="btn-run" id="run-'+sid+'" onclick="runSeoNow(\''+sid+'\',\''+esc(c.url||'')+'\')">▶ Avvia</button></td></tr>';
   }).join('');
 }
 
 function editSeo(id){openModal('Seo',id);}
+
+async function runSeoNow(sid,url){
+  var btn=document.getElementById('run-'+sid);
+  if(!btn||btn.disabled)return;
+  btn.disabled=true;btn.textContent='⏳ Avvio...';
+  try{
+    var res=await fetch(WORKER_URL+'/run',{method:'POST',headers:{'Authorization':'Bearer '+WORKER_SECRET}});
+    var data=await res.json();
+    if(res.ok){
+      btn.textContent='✓ Avviato';
+      showToast('Run manuale avviato per '+url,'success');
+      setTimeout(function(){btn.disabled=false;btn.textContent='▶ Avvia';},10000);
+    } else {
+      throw new Error(data.error||'Errore');
+    }
+  }catch(e){
+    btn.disabled=false;btn.textContent='▶ Avvia';
+    showToast('Errore: '+e.message,'error');
+  }
+}
 
 function openModal(type,id){
   if(type==='Client'){
@@ -943,10 +970,11 @@ function renderPreventivi(){
   if(!preventivi.length){el.innerHTML='<div class="empty">Nessun preventivo ancora</div>';return;}
   el.innerHTML=preventivi.slice().reverse().map(function(p,ri){
     var i=preventivi.length-1-ri;
-    return '<div class="prev-row"><div class="p-num">'+esc(p.numero)+'</div><div class="p-info"><div class="p-nome">'+esc(p.cliente)+'</div><div class="p-meta">'+esc(p.tipo||'')+' · '+esc(p.data)+'</div></div><div class="p-importo">€'+(p.totale||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div><button class="btn-edit" onclick="riscaricarePDF('+i+')">PDF</button></div>';
+    return '<div class="prev-row"><div class="p-num">'+esc(p.numero)+'</div><div class="p-info"><div class="p-nome">'+esc(p.cliente)+'</div><div class="p-meta">'+esc(p.tipo||'')+' · '+esc(p.data)+'</div></div><div class="p-importo">€'+(p.totale||0).toLocaleString('it-IT',{minimumFractionDigits:2})+'</div><div style="display:flex;gap:6px"><button class="btn-edit" onclick="riscaricarePDF('+i+')">PDF</button><button class="btn-del-prev" onclick="deletePreventivo('+i+')">Elimina</button></div></div>';
   }).join('');
 }
 function riscaricarePDF(i){var p=preventivi[i];if(p)generaPDFDaOggetto(p);}
+function deletePreventivo(i){if(!confirm('Eliminare il preventivo '+preventivi[i]?.numero+'?'))return;preventivi.splice(i,1);savePrevLocal();renderPreventivi();showToast('Preventivo eliminato','success');}
 async function generaPreventivo(){
   var nome=document.getElementById('p-nome').value.trim();
   if(!nome){showToast('Inserisci il nome cliente','error');return;}
