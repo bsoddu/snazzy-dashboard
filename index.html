@@ -515,11 +515,12 @@ function renderApt(){
     var day=d?d.getDate():'--';var month=d?d.toLocaleDateString('it-IT',{month:'short'}).toUpperCase():'';
     var ora=a.ora?a.ora.slice(0,5):'';
     var aid=String(a.id).replace(/'/g,'');
-    return '<div class="apt-card" data-aid="'+aid+'" onclick="editApt(this.getAttribute(\'data-aid\'))"><div class="apt-date"><div class="apt-day">'+day+'</div><div class="apt-month">'+month+'</div></div><div><div class="apt-cliente">'+esc(a.cliente||'--')+'</div><div class="apt-meta">'+(ora?'<span>'+ora+'</span>':'')+(a.luogo?'<span>'+esc(a.luogo)+'</span>':'')+'</div>'+(a.note?'<div class="apt-note">'+esc(a.note)+'</div>':'')+'</div></div>';
+    return '<div class="apt-card" style="justify-content:space-between" data-aid="'+aid+'" onclick="editApt(this.getAttribute(\'data-aid\'))"><div style="display:flex;align-items:flex-start;gap:1rem"><div class="apt-date"><div class="apt-day">'+day+'</div><div class="apt-month">'+month+'</div></div><div><div class="apt-cliente">'+esc(a.cliente||'--')+'</div><div class="apt-meta">'+(ora?'<span>'+ora+'</span>':'')+(a.luogo?'<span>'+esc(a.luogo)+'</span>':'')+'</div>'+(a.note?'<div class="apt-note">'+esc(a.note)+'</div>':'')+'</div></div><button class="btn-del-todo" data-aid="'+aid+'" onclick="event.stopPropagation();quickDelApt(this.getAttribute(\'data-aid\'))">×</button></div>';
   }).join('');
 }
 
 function editApt(id){openModal('Apt',id);}
+async function quickDelApt(id){if(!confirm('Eliminare questo appuntamento?'))return;try{await api('DELETE','appointments','id=eq.'+id);appointments=await api('GET','appointments','select=*&order=data.asc,ora.asc');renderApt();showToast('Appuntamento eliminato','success');}catch(e){showToast('Errore','error');}}
 
 function renderTodo(){
   var el=document.getElementById('todoList');
