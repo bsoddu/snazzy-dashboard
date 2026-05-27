@@ -777,83 +777,122 @@ function exportReport(){
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   var W=210,ml=15,mr=195,cw=W-ml*2,y=0;
+  var BLACK=[20,20,20],GRAY=[90,90,90],LGRAY=[150,150,150],GREEN=[30,160,60],YELLOW=[200,140,0],RED=[200,40,40],ACCENT=[60,160,60];
 
-  // Header
-  doc.setFillColor(12,12,14);doc.rect(0,0,W,42,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(255,255,255);doc.text('SnazzyAgency',ml,18);
-  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(170,170,170);doc.text('Web Agency — Analisi SEO & Performance',ml,25);
-  doc.setFillColor(200,241,53);doc.roundedRect(ml,32,58,7,1.5,1.5,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(12,12,14);doc.text('REPORT ANALISI SITO',ml+29,37,{align:'center'});
-  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(200,200,200);doc.text(new Date().toLocaleDateString('it-IT'),mr,37,{align:'right'});
-  y=52;
+  function newPageIfNeeded(need){if(y+need>272){doc.addPage();y=15;}}
+  function statusColor(s){return s==='ok'?GREEN:s==='warn'?YELLOW:RED;}
+  function scoreCol(n){return n>=70?GREEN:n>=45?YELLOW:RED;}
+  function hRule(){doc.setDrawColor(220,220,220);doc.setLineWidth(0.2);doc.line(ml,y,mr,y);y+=4;}
 
-  // Overall
-  var sc=d.overall_score,sc3=sc>=70?[200,241,53]:sc>=45?[245,197,24]:[255,68,68];
-  doc.setFillColor(28,28,31);doc.roundedRect(ml,y,cw,26,2,2,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(38);doc.setTextColor(sc3[0],sc3[1],sc3[2]);doc.text(String(sc),ml+12,y+19);
-  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(240,240,240);doc.text(d.overall_label,ml+32,y+10);
-  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(120,120,120);doc.text(url,ml+32,y+17);
-  var sumLines=doc.splitTextToSize(d.overall_summary,cw-34);
-  doc.setFontSize(8);doc.setTextColor(160,160,160);doc.text(sumLines.slice(0,2),ml+32,y+23);
-  y+=32;
+  // ── HEADER ──────────────────────────────────────────────
+  doc.setFillColor(20,20,20);doc.rect(0,0,W,28,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(255,255,255);
+  doc.text('SnazzyAgency',ml,12);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(180,180,180);
+  doc.text('Analisi SEO & Performance',ml,19);
+  doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(180,255,120);
+  doc.text('REPORT',mr,12,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(160,160,160);
+  doc.text(new Date().toLocaleDateString('it-IT'),mr,19,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(130,130,130);
+  doc.text(url,mr,25,{align:'right'});
+  y=36;
 
-  // Category scores
-  var catW=(cw-3*(d.categories.length-1))/d.categories.length;
+  // ── OVERALL SCORE ────────────────────────────────────────
+  var sc=d.overall_score,scC=scoreCol(sc);
+  doc.setFillColor(245,245,245);doc.roundedRect(ml,y,cw,24,2,2,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(34);doc.setTextColor(scC[0],scC[1],scC[2]);
+  doc.text(String(sc),ml+14,y+18,{align:'center'});
+  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+  doc.text(d.overall_label,ml+28,y+9);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+  var sumL=doc.splitTextToSize(d.overall_summary,cw-30);
+  doc.text(sumL.slice(0,3),ml+28,y+15);
+  y+=30;
+
+  // ── CATEGORY SCORE CARDS ─────────────────────────────────
+  var n=d.categories.length,gap=3,catW=(cw-(n-1)*gap)/n;
   d.categories.forEach(function(c,i){
-    var cx=ml+i*(catW+3),cc=c.score>=70?[200,241,53]:c.score>=45?[245,197,24]:[255,68,68];
-    doc.setFillColor(28,28,31);doc.roundedRect(cx,y,catW,20,1.5,1.5,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(cc[0],cc[1],cc[2]);doc.text(String(c.score),cx+catW/2,y+13,{align:'center'});
-    doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(100,100,100);
-    doc.text(c.name.split('&')[0].trim(),cx+catW/2,y+18,{align:'center'});
+    var cx=ml+i*(catW+gap),cc=scoreCol(c.score);
+    doc.setFillColor(248,248,248);doc.setDrawColor(220,220,220);doc.setLineWidth(0.3);
+    doc.roundedRect(cx,y,catW,22,1.5,1.5,'FD');
+    doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(cc[0],cc[1],cc[2]);
+    doc.text(String(c.score),cx+catW/2,y+13,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+    var shortN=c.name.length>18?c.name.slice(0,17)+'…':c.name;
+    doc.text(shortN,cx+catW/2,y+19,{align:'center'});
+    // progress bar
+    doc.setFillColor(220,220,220);doc.rect(cx+2,y+20.5,catW-4,1.5,'F');
+    var bw=(c.score/100)*(catW-4);
+    doc.setFillColor(cc[0],cc[1],cc[2]);doc.rect(cx+2,y+20.5,bw,1.5,'F');
   });
-  y+=26;
+  y+=28;
 
-  // Categories detail
+  // ── CATEGORY DETAILS ─────────────────────────────────────
   d.categories.forEach(function(c){
-    if(y>240){doc.addPage();y=15;}
-    var cc=c.score>=70?[200,241,53]:c.score>=45?[245,197,24]:[255,68,68];
-    doc.setFillColor(18,18,20);doc.rect(ml,y,cw,8,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(cc[0],cc[1],cc[2]);doc.text(c.name,ml+3,y+5.5);
-    doc.setTextColor(150,150,150);doc.text(c.score+'/100',mr-3,y+5.5,{align:'right'});
+    newPageIfNeeded(14);
+    var cc=scoreCol(c.score);
+    // section header
+    doc.setFillColor(cc[0],cc[1],cc[2]);doc.rect(ml,y,4,8,'F');
+    doc.setFillColor(245,245,245);doc.rect(ml+4,y,cw-4,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+    doc.text(c.name,ml+8,y+5.5);
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(cc[0],cc[1],cc[2]);
+    doc.text(String(c.score)+'/100',mr-2,y+5.5,{align:'right'});
     y+=11;
+
     c.items.forEach(function(item){
-      if(y>272){doc.addPage();y=15;}
-      var dc=item.status==='ok'?[34,197,94]:item.status==='warn'?[245,197,24]:[255,68,68];
-      doc.setFillColor(dc[0],dc[1],dc[2]);doc.circle(ml+2.5,y+2.5,2,'F');
-      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(220,220,220);doc.text(item.text,ml+7,y+4);
+      newPageIfNeeded(8);
+      var dc=statusColor(item.status);
+      // bullet circle
+      doc.setFillColor(dc[0],dc[1],dc[2]);doc.circle(ml+2.5,y+2,2,'F');
+      // item text
+      doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+      doc.text(item.text,ml+7,y+3.5);
       y+=7;
       if(item.detail){
-        if(y>272){doc.addPage();y=15;}
-        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(120,120,120);
-        var dl=doc.splitTextToSize(item.detail,cw-7);
-        dl.slice(0,2).forEach(function(l){if(y>272){doc.addPage();y=15;}doc.text(l,ml+7,y);y+=4.5;});
+        newPageIfNeeded(6);
+        doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(GRAY[0],GRAY[1],GRAY[2]);
+        var dl=doc.splitTextToSize(item.detail,cw-9);
+        dl.slice(0,2).forEach(function(l){newPageIfNeeded(5);doc.text(l,ml+7,y);y+=4.5;});
       }
+      y+=1;
     });
     y+=5;
   });
 
-  // Azioni
+  // ── AZIONI PRIORITARIE ───────────────────────────────────
   if(d.top_actions&&d.top_actions.length){
-    if(y>230){doc.addPage();y=15;}
-    doc.setFillColor(18,18,20);doc.rect(ml,y,cw,8,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(200,241,53);doc.text('AZIONI PRIORITARIE',ml+3,y+5.5);
+    newPageIfNeeded(16);
+    doc.setFillColor(30,160,60);doc.rect(ml,y,4,8,'F');
+    doc.setFillColor(235,250,238);doc.rect(ml+4,y,cw-4,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+    doc.text('AZIONI PRIORITARIE',ml+8,y+5.5);
     y+=13;
     d.top_actions.forEach(function(a,i){
-      if(y>272){doc.addPage();y=15;}
-      doc.setFillColor(200,241,53);doc.circle(ml+3,y+3,3,'F');
-      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(12,12,14);doc.text(String(i+1),ml+3,y+4.2,{align:'center'});
-      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(220,220,220);
-      var al=doc.splitTextToSize(a,cw-10);
-      al.slice(0,3).forEach(function(l){if(y>272){doc.addPage();y=15;}doc.text(l,ml+9,y+4);y+=5;});
-      y+=4;
+      newPageIfNeeded(12);
+      doc.setFillColor(30,160,60);doc.circle(ml+3.5,y+3,3.5,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(255,255,255);
+      doc.text(String(i+1),ml+3.5,y+4.5,{align:'center'});
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(BLACK[0],BLACK[1],BLACK[2]);
+      var al=doc.splitTextToSize(a,cw-12);
+      al.slice(0,3).forEach(function(l,li){
+        newPageIfNeeded(5);
+        doc.text(l,ml+10,y+4+li*5);
+      });
+      y+=Math.max(9,al.slice(0,3).length*5+2);
     });
   }
 
-  // Footer
-  doc.setFillColor(20,20,22);doc.rect(0,277,W,20,'F');
-  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(100,100,100);
-  doc.text('SnazzyAgency  ·  Report generato il '+new Date().toLocaleDateString('it-IT')+'  ·  '+url,W/2,284,{align:'center'});
-  doc.text('soddubruno20@gmail.com  ·  +39 379 272 5909',W/2,290,{align:'center'});
+  // ── FOOTER su ogni pagina ────────────────────────────────
+  var pages=doc.getNumberOfPages();
+  for(var p=1;p<=pages;p++){
+    doc.setPage(p);
+    doc.setFillColor(240,240,240);doc.rect(0,285,W,12,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(120,120,120);
+    doc.text('SnazzyAgency  ·  soddubruno20@gmail.com  ·  +39 379 272 5909',ml,291);
+    doc.text('Pag. '+p+'/'+pages,mr,291,{align:'right'});
+  }
 
   var fname='Report_SEO_'+url.replace(/https?:\/\//,'').replace(/[^a-z0-9]/gi,'_').slice(0,30)+'.pdf';
   doc.save(fname);
