@@ -36,7 +36,7 @@ exports.handler = async function(event) {
       fetch(siteUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SnazzyAnalyzer/1.0)' } }),
       8000
     ).then(r => r.text()).then(t => t.slice(0, 40000)),
-    timed(fetch(psUrl), 9000).then(r => r.json()),
+    timed(fetch(psUrl), 15000).then(r => r.json()),
     timed(fetch(base + '/robots.txt'), 5000).then(r => r.ok ? r.text() : null),
     timed(fetch(base + '/sitemap.xml'), 5000).then(r => r.ok)
   ]);
