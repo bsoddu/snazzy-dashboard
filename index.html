@@ -731,7 +731,7 @@ async function startAnalysis(){
   document.getElementById('analyzerResults').innerHTML='';
   setAnStatus('Analisi in corso...',true);
   try{
-    var res=await fetch('/.netlify/functions/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
+    var res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
     var data=JSON.parse(await res.text());
     if(data.error)throw new Error(data.error);
     renderAnalysis(data,url);setAnStatus('');
